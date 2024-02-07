@@ -1,0 +1,237 @@
+#include <AFMotor.h>
+#include <Servo.h>
+#include <HC05.h>
+#include <Arduino.h>
+
+#define HCSR04_PIN_TRIG 7
+#define HCSR04_PIN_ECHO 8
+
+#define SERVO_PIN_ATTACH 10
+
+// Maximum Distance (cm) for Ultrasonic Sensor to detect
+#define MAX_DISTANCE 300
+
+
+
+NewPing hcsr04(HCSR04_PIN_TRIG, HCSR04_PIN_ECHO, MAX_DISTANCE); // Sensor Function
+
+AF_DCMotor leftFront  (1, MOTOR12_1KHZ);
+AF_DCMotor rightFront (2, MOTOR34_1KHZ);
+AF_DCMotor leftBack  (3, MOTOR12_1KHZ);
+AF_DCMotor rightFront (4, MOTOR34_1KHZ);
+
+
+// Global variables and declaration
+
+Servo myServo;
+const int servoSMTargetPosition = 90; //Position when event is detected
+int distance = 100;
+boolean goesForward = false;
+char command;
+
+
+void setup()
+{
+  myServo.attach(SERVO_PIN_ATTACH);
+  myServo.write(servoSMTargetPosition);
+  delay(100);
+
+  pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+  pinMode(echoPin, INPUT); // Sets the echoPin as an Input
+  Serial.begin(9600);
+
+}
+
+void loop()
+{
+  // put your main code here, to run repeatedly:
+
+  myServo.write(90);
+
+}
+
+  // Function Calls upon commands
+  {
+    if (command == '1')
+    {
+      forward_car();
+    }
+    else if (command == '2')
+    {
+      back_car();
+    }
+    else if (command == '3')
+    {
+      right_car();
+    }
+    else if (command == '4')
+    {
+      left_car();
+    }
+
+    else if (command == '5')
+    {
+      self_drive();
+    }
+
+    command = '\0';
+  }
+}
+
+void self_drive()
+{
+  int distanceRight = 0;
+  int distanceLeft = 0;
+  delay(50);
+
+  if (distance <= 20) 
+  {
+    stop_car();
+    delay(300);
+    selfBack_car();
+    delay(400);
+    stop_car();
+    delay(300);
+    distanceRight = lookRight();
+    delay(300);
+    distanceLeft = lookLeft();
+    delay(300);
+
+    if (distanceRight >= distanceLeft) 
+    {
+      selfRight_car();
+      stop_car();
+    }
+    else 
+    {
+      selfLeft_car();
+      stop_car();
+    }
+  }
+  else
+  {
+    selfForward_car();
+  }
+  distance = readPing();
+}
+
+
+void selfForward_car()
+{
+  if (!goesForward)
+  {
+    goesForward = true;
+
+    leftMotor.run(FORWARD);
+    leftMotor.setSpeed(255);
+    rightMotor.run(FORWARD);
+    rightMotor.setSpeed(255);
+  }
+
+}
+
+void selfBack_car()
+{
+
+  goesForward = false;
+
+  leftMotor.run(BACKWARD);
+  leftMotor.setSpeed(255);
+  rightMotor.run(BACKWARD);
+  rightMotor.setSpeed(255);
+
+}
+
+void selfRight_car()
+{
+  leftMotor.run(FORWARD);
+  leftMotor.setSpeed(190);
+  rightMotor.run(BACKWARD);
+  rightMotor.setSpeed(190);
+
+  delay(500);
+
+  leftMotor.run(FORWARD);
+  leftMotor.setSpeed(190);
+  rightMotor.run(BACKWARD);
+  rightMotor.setSpeed(190);
+}
+
+void selfLeft_car()
+{
+  leftMotor.run(BACKWARD);
+  leftMotor.setSpeed(190);
+  rightMotor.run(FORWARD);
+  rightMotor.setSpeed(190);
+
+  delay(500);
+
+  leftMotor.run(BACKWARD);
+  leftMotor.setSpeed(190);
+  rightMotor.run(FORWARD);
+  rightMotor.setSpeed(190);
+}
+
+
+// Stop Car Function
+void stop_car ()
+{
+  leftMotor.run(RELEASE);
+  rightMotor.run(RELEASE);
+}
+
+int lookRight() 
+{
+  myServo.write(50);
+  delay(500);
+  int distance = readPing();
+  delay(100);
+  myServo.write(115);
+  return distance;
+}
+
+int lookLeft() 
+{
+  myServo.write(170);
+  delay(500);
+  int distance = readPing();
+  delay(100);
+  myServo.write(115);
+  return distance;
+  delay(100);
+}
+
+int readPing() 
+{
+  delay(70);
+  int cm = hcsr04.ping_cm();
+  if (cm == 0) 
+  {
+    cm = 250;
+  }
+  return cm;
+}
+
+const int trigPin = 9;
+const int echoPin = 10;
+
+long duration;
+int distance;
+void setup() {
+pinMode(trigPin, OUTPUT)
+pinMode(echoPin, INPUT);
+Serial.begin(9600);
+}
+
+void loop() 
+{
+  digitalWrite(trigPin, LOW);
+  delayMs(2);
+  digitalWrite(trigPin, HIGH);
+  delayMs(10);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  distance= duration*0.034/2;
+  Serial.print("Distance: ");
+  Serial.println(distance);
+}
